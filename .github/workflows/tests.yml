@@ -1,0 +1,58 @@
+name: Library Management System — Test Suite
+
+# Runs on every push and every pull request targeting main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Get the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 3. Install Chrome for Selenium
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      # 4. Install project + test dependencies
+      #    Adjust "django" below if your project needs other packages
+      #    (e.g. keep a requirements.txt at the repo root and install that instead).
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install django selenium pytest pytest-html
+
+      # 5. Run migrations so db.sqlite3 + tables exist
+      - name: Run migrations
+        run: python manage.py migrate
+
+      # 6. Start the Django dev server in the background
+      - name: Start Django server
+        run: |
+          python manage.py runserver 127.0.0.1:8000 &
+          sleep 3
+
+      # 7. Run the full test suite (Selenium runs headless automatically — CI=true is set by GitHub Actions)
+      - name: Run pytest
+        run: pytest -v --html=report.html --self-contained-html
+
+      # 8. Save the HTML report so it can be downloaded from the Actions run page,
+      #    even if a test failed
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: report.html
