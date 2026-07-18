@@ -3,22 +3,47 @@ Shared pytest fixtures for the Library Management System test suite.
 Place this file in the same folder as your test_*.py files —
 pytest auto-discovers conftest.py, no import needed.
 """
+import os
 import sqlite3
 from pathlib import Path
 
 import pytest
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.environ.get("TEST_BASE_URL", "http://127.0.0.1:8000")
+IS_CI = bool(os.environ.get("CI")) or os.environ.get("HEADLESS", "").lower() == "true"
 
 
 @pytest.fixture
 def driver():
-    """Opens a fresh Chrome browser before each test, closes it after."""
-    drv = webdriver.Chrome()
+    """
+    Opens Chrome before each test, closes it after.
+    Runs headless automatically on CI (GitHub Actions sets CI=true),
+    or if you set HEADLESS=true yourself locally.
+    """
+    options = Options()
+
+    # If the workflow captured an exact Chrome binary path, use it directly —
+    # this avoids "session not created: Chrome instance exited abnormally"
+    # caused by Selenium Manager picking the wrong / a missing binary.
+    chrome_binary = os.environ.get("CHROME_BINARY")
+    if chrome_binary:
+        options.binary_location = chrome_binary
+
+    if IS_CI:
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--disable-software-rasterizer")
+        options.add_argument("--window-size=1920,1080")
+
+    drv = webdriver.Chrome(options=options)
     drv.implicitly_wait(5)
-    drv.maximize_window()
+    if not IS_CI:
+        drv.maximize_window()
 
     yield drv  # test runs here
 
@@ -27,7 +52,7 @@ def driver():
 
 @pytest.fixture
 def base_url():
-    """Change this if your Django dev server runs on a different port."""
+    """Change TEST_BASE_URL env var if your Django dev server runs elsewhere."""
     return BASE_URL
 
 

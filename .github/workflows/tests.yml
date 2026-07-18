@@ -22,9 +22,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      # 3. Install Chrome for Selenium
+      # 3. Install Chrome for Selenium — capture its exact path so Selenium
+      #    can find it reliably (fixes "Chrome instance exited abnormally")
       - name: Install Chrome
+        id: setup-chrome
         uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
       # 4. Install project + test dependencies
       #    Adjust "django" below if your project needs other packages
@@ -42,10 +46,12 @@ jobs:
       - name: Start Django server
         run: |
           python manage.py runserver 127.0.0.1:8000 &
-          sleep 3
+          sleep 5
 
       # 7. Run the full test suite (Selenium runs headless automatically — CI=true is set by GitHub Actions)
       - name: Run pytest
+        env:
+          CHROME_BINARY: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: pytest -v --html=report.html --self-contained-html
 
       # 8. Save the HTML report so it can be downloaded from the Actions run page,
