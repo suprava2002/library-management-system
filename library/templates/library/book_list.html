@@ -1,0 +1,50 @@
+{% extends 'library/base.html' %}
+{% block title %}Books - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Books</h1>
+    <a href="{% url 'book_add' %}" class="btn btn-primary">+ Add Book</a>
+</div>
+
+<form method="get" class="search-form">
+    <input type="text" name="q" placeholder="Search by title, author, or ISBN" value="{{ query }}">
+    <button type="submit" class="btn btn-secondary">Search</button>
+</form>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>ISBN</th>
+            <th>Category</th>
+            <th>Available / Total</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for book in books %}
+        <tr>
+            <td>{{ book.title }}</td>
+            <td>{{ book.author }}</td>
+            <td>{{ book.isbn }}</td>
+            <td>{{ book.category|default:"—" }}</td>
+            <td>
+                <span class="badge {% if book.is_available %}badge-issued{% else %}badge-overdue{% endif %}">
+                    {{ book.available_copies }} / {{ book.total_copies }}
+                </span>
+            </td>
+            <td>
+                <form method="post" action="{% url 'book_delete' book.pk %}" onsubmit="return confirm('Delete this book?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-row">No books found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

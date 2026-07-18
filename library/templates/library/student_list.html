@@ -1,0 +1,46 @@
+{% extends 'library/base.html' %}
+{% block title %}Students - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Students</h1>
+    <a href="{% url 'student_add' %}" class="btn btn-primary">+ Add Student</a>
+</div>
+
+<form method="get" class="search-form">
+    <input type="text" name="q" placeholder="Search by name or roll number" value="{{ query }}">
+    <button type="submit" class="btn btn-secondary">Search</button>
+</form>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Roll Number</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Joined On</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr>
+            <td>{{ student.name }}</td>
+            <td>{{ student.roll_number }}</td>
+            <td>{{ student.email|default:"—" }}</td>
+            <td>{{ student.phone|default:"—" }}</td>
+            <td>{{ student.joined_on }}</td>
+            <td>
+                <form method="post" action="{% url 'student_delete' student.pk %}" onsubmit="return confirm('Delete this student?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-row">No students found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'library/base.html' %}
+{% block title %}Add Book - Library MS{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Add New Book</h1>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required>
+    </div>
+    <div class="form-group">
+        <label for="author">Author</label>
+        <input type="text" id="author" name="author" required>
+    </div>
+    <div class="form-group">
+        <label for="isbn">ISBN</label>
+        <input type="text" id="isbn" name="isbn" required>
+    </div>
+    <div class="form-group">
+        <label for="category">Category</label>
+        <input type="text" id="category" name="category" placeholder="e.g. Fiction, Science">
+    </div>
+    <div class="form-group">
+        <label for="total_copies">Total Copies</label>
+        <input type="number" id="total_copies" name="total_copies" min="1" value="1" required>
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Book</button>
+        <a href="{% url 'book_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

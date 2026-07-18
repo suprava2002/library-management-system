@@ -1,0 +1,59 @@
+{% extends 'library/base.html' %}
+{% block title %}Issue / Return - Library MS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Issue / Return Records</h1>
+    <a href="{% url 'issue_book' %}" class="btn btn-primary">+ Issue a Book</a>
+</div>
+
+<div class="filter-tabs">
+    <a href="{% url 'issue_list' %}" class="{% if not status_filter %}active{% endif %}">All</a>
+    <a href="?status=ISSUED" class="{% if status_filter == 'ISSUED' %}active{% endif %}">Issued</a>
+    <a href="?status=RETURNED" class="{% if status_filter == 'RETURNED' %}active{% endif %}">Returned</a>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Book</th>
+            <th>Student</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in records %}
+        <tr>
+            <td>{{ record.book.title }}</td>
+            <td>{{ record.student.name }}</td>
+            <td>{{ record.issue_date }}</td>
+            <td>{{ record.due_date }}</td>
+            <td>{{ record.return_date|default:"—" }}</td>
+            <td>
+                {% if record.is_overdue %}
+                    <span class="badge badge-overdue">Overdue</span>
+                {% else %}
+                    <span class="badge badge-{{ record.status|lower }}">{{ record.status }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if record.status == 'ISSUED' %}
+                <form method="post" action="{% url 'return_book' record.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-sm">Mark Returned</button>
+                </form>
+                {% else %}
+                —
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty-row">No records found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

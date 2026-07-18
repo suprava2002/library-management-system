@@ -1,0 +1,30 @@
+{% extends 'library/base.html' %}
+{% block title %}Add Student - Library MS{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Add New Student</h1>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div class="form-group">
+        <label for="roll_number">Roll Number</label>
+        <input type="text" id="roll_number" name="roll_number" required>
+    </div>
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email">
+    </div>
+    <div class="form-group">
+        <label for="phone">Phone</label>
+        <input type="text" id="phone" name="phone">
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Student</button>
+        <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

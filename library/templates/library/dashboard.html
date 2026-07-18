@@ -1,0 +1,57 @@
+{% extends 'library/base.html' %}
+{% block title %}Dashboard - Library MS{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Dashboard</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-number">{{ total_books }}</span>
+        <span class="stat-label">Total Books</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ total_students }}</span>
+        <span class="stat-label">Total Students</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number">{{ books_issued }}</span>
+        <span class="stat-label">Books Issued</span>
+    </div>
+    <div class="stat-card stat-danger">
+        <span class="stat-number">{{ overdue_count }}</span>
+        <span class="stat-label">Overdue</span>
+    </div>
+</div>
+
+<h2 class="section-title">Recent Activity</h2>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Book</th>
+            <th>Student</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in recent_issues %}
+        <tr>
+            <td>{{ record.book.title }}</td>
+            <td>{{ record.student.name }}</td>
+            <td>{{ record.issue_date }}</td>
+            <td>{{ record.due_date }}</td>
+            <td><span class="badge badge-{{ record.status|lower }}">{{ record.status }}</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty-row">No records yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="quick-actions">
+    <a href="{% url 'book_add' %}" class="btn btn-primary">+ Add Book</a>
+    <a href="{% url 'student_add' %}" class="btn btn-primary">+ Add Student</a>
+    <a href="{% url 'issue_book' %}" class="btn btn-secondary">Issue a Book</a>
+</div>
+{% endblock %}

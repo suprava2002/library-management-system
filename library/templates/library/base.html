@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Library Management System{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'library/css/style.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📚 Library MS</div>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'book_list' %}">Books</a>
+            <a href="{% url 'student_list' %}">Students</a>
+            <a href="{% url 'issue_list' %}">Issue / Return</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Library Management System &mdash; Built with Django</p>
+    </footer>
+</body>
+</html>
