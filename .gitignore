@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+db.sqlite3
+.pytest_cache/
+report.html
+*.log
+venv/
+.env
