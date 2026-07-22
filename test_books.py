@@ -29,15 +29,20 @@ def add_book(driver, base_url, title, author, isbn, category="Fiction", total_co
     driver.find_element(By.CSS_SELECTOR, "button.btn-primary").click()
 
 
-def get_book_row_by_isbn(driver, isbn, timeout=15):
-    """Waits for the books table to actually render before searching rows.
-    Prevents StopIteration when /books/ hasn't finished loading yet."""
+def get_book_row_by_isbn(driver, isbn, timeout=25):
+    """Polls for the specific row containing isbn, not just for the table
+    to exist. On a shared/slower CI runner, the table can be present before
+    all rows have rendered, so waiting only for '.data-table' once was still
+    flaky (StopIteration). This retries until the row shows up or times out."""
     wait = WebDriverWait(driver, timeout)
-    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "data-table")))
-    return next(
-        r for r in driver.find_elements(By.CSS_SELECTOR, ".data-table tbody tr")
-        if isbn in r.text
-    )
+
+    def _find_row(d):
+        for r in d.find_elements(By.CSS_SELECTOR, ".data-table tbody tr"):
+            if isbn in r.text:
+                return r
+        return False
+
+    return wait.until(_find_row)
 
 
 def test_book_list_page_loads(driver, base_url):

@@ -11,9 +11,9 @@ IMPORTANT:
   with the form. On a shared CI runner the Django dev server can respond
   a little slower than locally, and implicit waits alone were occasionally
   not enough, causing a flaky NoSuchElementException on the "book" select.
-- get_book_row_by_isbn applies the same explicit-wait pattern before
-  looking up a row on /books/, to avoid a StopIteration when the redirect
-  hasn't finished rendering the table yet.
+- get_book_row_by_isbn and get_latest_row poll for the specific row
+  (not just for the table element to exist once) to avoid a StopIteration
+  or race when the page hasn't finished rendering every row yet on CI.
 """
 import time
 from selenium.webdriver.common.by import By
@@ -30,7 +30,7 @@ def unique_tag():
 
 def issue_book_to_student(driver, base_url, book_title, student_name):
     driver.get(base_url + "/issues/issue/")
-    wait = WebDriverWait(driver, 15)
+    wait = WebDriverWait(driver, 25)
     book_select_el = wait.until(EC.presence_of_element_located((By.ID, "book")))
     student_select_el = wait.until(EC.presence_of_element_located((By.ID, "student")))
     book_select = Select(book_select_el)
@@ -52,13 +52,19 @@ def issue_book_to_student(driver, base_url, book_title, student_name):
 def get_latest_row(driver, title, student_name):
     """Rows are ordered by -issue_date (date-only), so same-day ties aren't
     guaranteed newest-first. Titles/names here are already unique per test
-    run, but we still take the LAST DOM match as a safety net."""
-    wait = WebDriverWait(driver, 15)
-    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "data-table")))
-    rows = [
-        r for r in driver.find_elements(By.CSS_SELECTOR, ".data-table tbody tr")
-        if title in r.text and student_name in r.text
-    ]
+    run, but we still take the LAST DOM match as a safety net.
+    Polls for a matching row (not just the table's existence) so a slower
+    CI render doesn't race the assertion below."""
+    wait = WebDriverWait(driver, 25)
+
+    def _find_rows(d):
+        rows = [
+            r for r in d.find_elements(By.CSS_SELECTOR, ".data-table tbody tr")
+            if title in r.text and student_name in r.text
+        ]
+        return rows or False
+
+    rows = wait.until(_find_rows)
     return rows[-1]
 
 
