@@ -41,7 +41,11 @@ def driver():
         options.add_argument("--window-size=1920,1080")
 
     drv = webdriver.Chrome(options=options)
-    drv.implicitly_wait(5)
+    # NOTE: deliberately NOT calling drv.implicitly_wait() here.
+    # Mixing an implicit wait with the explicit WebDriverWait calls used
+    # throughout the test suite is a known Selenium anti-pattern that can
+    # make explicit waits slower/less predictable. All waiting in this
+    # suite is done explicitly (WebDriverWait), so no implicit wait is set.
     if not IS_CI:
         drv.maximize_window()
 
@@ -84,3 +88,32 @@ def db_connection():
     conn.execute("PRAGMA foreign_keys = ON")  # SQLite needs this explicitly
     yield conn
     conn.close()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    On any test failure, save a screenshot + the live page HTML at the
+    moment of failure into failure_screenshots/. The CI workflow uploads
+    that folder as a downloadable artifact, so a CI-only failure (like a
+    Selenium timeout that can't be reproduced locally) can actually be
+    *seen* instead of guessed at from a stack trace alone.
+    """
+    outcome = yield
+    report = outcome.get_result()
+    if report.when == "call" and report.failed:
+        driver = item.funcargs.get("driver")
+        if driver is not None:
+            out_dir = Path("failure_screenshots")
+            out_dir.mkdir(exist_ok=True)
+            safe_name = item.name.replace("/", "_").replace("::", "__")
+            try:
+                driver.save_screenshot(str(out_dir / f"{safe_name}.png"))
+            except Exception:
+                pass
+            try:
+                (out_dir / f"{safe_name}.html").write_text(
+                    driver.page_source, encoding="utf-8"
+                )
+            except Exception:
+                pass
