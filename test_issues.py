@@ -11,13 +11,16 @@ IMPORTANT:
   with the form. On a shared CI runner the Django dev server can respond
   a little slower than locally, and implicit waits alone were occasionally
   not enough, causing a flaky NoSuchElementException on the "book" select.
+- get_book_row_by_isbn applies the same explicit-wait pattern before
+  looking up a row on /books/, to avoid a StopIteration when the redirect
+  hasn't finished rendering the table yet.
 """
 import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from test_books import add_book, unique_isbn
+from test_books import add_book, unique_isbn, get_book_row_by_isbn
 from test_students import add_student, unique_roll
 
 
@@ -27,11 +30,9 @@ def unique_tag():
 
 def issue_book_to_student(driver, base_url, book_title, student_name):
     driver.get(base_url + "/issues/issue/")
-
     wait = WebDriverWait(driver, 15)
     book_select_el = wait.until(EC.presence_of_element_located((By.ID, "book")))
     student_select_el = wait.until(EC.presence_of_element_located((By.ID, "student")))
-
     book_select = Select(book_select_el)
     student_select = Select(student_select_el)
 
@@ -40,7 +41,6 @@ def issue_book_to_student(driver, base_url, book_title, student_name):
         if option.text.startswith(book_title):
             book_select.select_by_visible_text(option.text)
             break
-
     for option in student_select.options:
         if option.text.startswith(student_name):
             student_select.select_by_visible_text(option.text)
@@ -55,7 +55,6 @@ def get_latest_row(driver, title, student_name):
     run, but we still take the LAST DOM match as a safety net."""
     wait = WebDriverWait(driver, 15)
     wait.until(EC.presence_of_element_located((By.CLASS_NAME, "data-table")))
-
     rows = [
         r for r in driver.find_elements(By.CSS_SELECTOR, ".data-table tbody tr")
         if title in r.text and student_name in r.text
@@ -78,7 +77,6 @@ def test_issue_book_success(driver, base_url):
 
     add_book(driver, base_url, title, "Robert Martin", isbn, total_copies="2")
     add_student(driver, base_url, student_name, roll)
-
     issue_book_to_student(driver, base_url, title, student_name)
 
     assert "/issues/" in driver.current_url
@@ -101,10 +99,7 @@ def test_issued_book_available_copies_decrease(driver, base_url):
     issue_book_to_student(driver, base_url, title, student_name)
 
     driver.get(base_url + "/books/")
-    row = next(
-        r for r in driver.find_elements(By.CSS_SELECTOR, ".data-table tbody tr")
-        if isbn in r.text
-    )
+    row = get_book_row_by_isbn(driver, isbn)
     assert "0 / 1" in row.text
 
 
@@ -147,10 +142,7 @@ def test_returned_book_copies_restored(driver, base_url):
     row.find_element(By.CSS_SELECTOR, "button.btn-secondary").click()
 
     driver.get(base_url + "/books/")
-    row = next(
-        r for r in driver.find_elements(By.CSS_SELECTOR, ".data-table tbody tr")
-        if isbn in r.text
-    )
+    row = get_book_row_by_isbn(driver, isbn)
     assert "1 / 1" in row.text
 
 
