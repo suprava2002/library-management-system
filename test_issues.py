@@ -68,6 +68,19 @@ def get_latest_row(driver, title, student_name):
     return rows[-1]
 
 
+def click_return_and_wait(driver, row):
+    """Clicks the Return button and waits for the resulting redirect's
+    success message before returning control. .click() on a form submit
+    button doesn't wait for the navigation it triggers — immediately
+    navigating elsewhere afterward can race the in-flight POST and cancel
+    it before the server processes the return, leaving available_copies
+    unchanged. Waiting for the success message proves the server actually
+    finished before we move on."""
+    row.find_element(By.CSS_SELECTOR, "button.btn-secondary").click()
+    wait = WebDriverWait(driver, 25)
+    return wait.until(EC.presence_of_element_located((By.CLASS_NAME, "alert-success")))
+
+
 def test_issue_list_page_loads(driver, base_url):
     driver.get(base_url + "/issues/")
     assert "Issue" in driver.title
@@ -122,9 +135,7 @@ def test_return_book_updates_status(driver, base_url):
 
     driver.get(base_url + "/issues/")
     row = get_latest_row(driver, title, student_name)
-    row.find_element(By.CSS_SELECTOR, "button.btn-secondary").click()
-
-    success_msg = driver.find_element(By.CLASS_NAME, "alert-success")
+    success_msg = click_return_and_wait(driver, row)
     assert "returned by" in success_msg.text
 
     driver.get(base_url + "/issues/")
@@ -145,7 +156,7 @@ def test_returned_book_copies_restored(driver, base_url):
 
     driver.get(base_url + "/issues/")
     row = get_latest_row(driver, title, student_name)
-    row.find_element(By.CSS_SELECTOR, "button.btn-secondary").click()
+    click_return_and_wait(driver, row)
 
     driver.get(base_url + "/books/")
     row = get_book_row_by_isbn(driver, isbn)
