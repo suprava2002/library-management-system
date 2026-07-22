@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install django selenium pytest pytest-html
+          pip install django selenium pytest pytest-html pytest-rerunfailures
 
       # 5. Run migrations so db.sqlite3 + tables exist
       - name: Run migrations
@@ -52,7 +52,7 @@ jobs:
       - name: Run pytest
         env:
           CHROME_BINARY: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: pytest -v --html=report.html --self-contained-html
+        run: pytest -v --html=report.html --self-contained-html --reruns 2 --reruns-delay 3
 
       # 8. Save the HTML report so it can be downloaded from the Actions run page,
       #    even if a test failed
